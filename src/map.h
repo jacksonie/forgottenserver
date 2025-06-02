@@ -15,12 +15,16 @@ class Creature;
 static constexpr int32_t MAP_MAX_LAYERS = 16;
 
 struct FindPathParams;
+
+struct AStarNode;
+using AStarNode_ptr = std::shared_ptr<AStarNode>;
+
 struct AStarNode
 {
-	AStarNode* parent;
-	uint16_t g;
-	uint16_t f;
-	uint16_t x, y;
+	AStarNode_ptr parent{nullptr};
+	uint16_t g{0};
+	uint16_t f{0};
+	uint16_t x{0}, y{0};
 };
 
 static constexpr uint16_t MAP_NORMALWALKCOST = 10;
@@ -31,20 +35,20 @@ class AStarNodes
 public:
 	AStarNodes(uint16_t x, uint16_t y);
 
-	void createNewNode(AStarNode* parent, uint16_t x, uint16_t y, uint16_t g, uint16_t f);
-	void addNode(AStarNode* node) { nodes.emplace_back(node); };
+	void createNewNode(const AStarNode_ptr& parent, uint16_t x, uint16_t y, uint16_t g, uint16_t f);
+	void addNode(AStarNode_ptr node) { nodes.emplace_back(node); };
 
-	AStarNode* getBestNode();
-	AStarNode* getNodeByPosition(uint16_t x, uint16_t y) { return nodeMap[x][y]; };
+	AStarNode_ptr getBestNode();
+	AStarNode_ptr getNodeByPosition(uint16_t x, uint16_t y) { return nodeMap[x][y]; };
 
-	static uint16_t getMapWalkCost(AStarNode* node, const Position& neighborPos);
+	static uint16_t getMapWalkCost(const AStarNode_ptr& node, const Position& neighborPos);
 	static uint16_t getTileWalkCost(const Creature& creature, const Tile* tile);
 
-private:
-	std::vector<std::unique_ptr<AStarNode>> toReleaseNodes;
+	auto nodesEmpty() const { return nodes.empty(); }
 
-	std::vector<AStarNode*> nodes;
-	std::map<uint16_t, std::map<uint16_t, AStarNode*>> nodeMap;
+private:
+	std::vector<AStarNode_ptr> nodes;
+	std::map<uint16_t, std::map<uint16_t, AStarNode_ptr>> nodeMap;
 };
 
 using SpectatorCache = std::map<Position, SpectatorVec>;

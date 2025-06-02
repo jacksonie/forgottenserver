@@ -691,10 +691,10 @@ bool Map::getPathMatching(const Creature& creature, const Position& targetPos, s
 
 	AStarNodes nodes(pos.x, pos.y);
 
-	AStarNode* found = nullptr;
+	AStarNode_ptr found = nullptr;
 	int32_t bestMatch = 0;
 	uint8_t iterations = 0;
-	AStarNode* n = nodes.getBestNode();
+	AStarNode_ptr n = nodes.getBestNode();
 	while (n) {
 		iterations++;
 
@@ -728,7 +728,7 @@ bool Map::getPathMatching(const Creature& creature, const Position& targetPos, s
 			}
 
 			const Tile* tile;
-			AStarNode* neighborNode = nodes.getNodeByPosition(pos.x, pos.y);
+			AStarNode_ptr neighborNode = nodes.getNodeByPosition(pos.x, pos.y);
 			if (neighborNode) {
 				tile = getTile(pos.x, pos.y, pos.z);
 			} else {
@@ -808,9 +808,7 @@ bool Map::getPathMatching(const Creature& creature, const Position& targetPos, s
 AStarNodes::AStarNodes(uint16_t x, uint16_t y) : nodes(), nodeMap()
 {
 	// Create our first node to check.
-	toReleaseNodes.push_back(std::make_unique<AStarNode>());
-	auto firstNode = toReleaseNodes.back().get();
-
+	AStarNode_ptr firstNode = std::make_shared<AStarNode>();
 	firstNode->parent = nullptr;
 	firstNode->x = x;
 	firstNode->y = y;
@@ -823,11 +821,9 @@ AStarNodes::AStarNodes(uint16_t x, uint16_t y) : nodes(), nodeMap()
 	nodeMap[x][y] = firstNode;
 }
 
-void AStarNodes::createNewNode(AStarNode* parent, uint16_t x, uint16_t y, uint16_t g, uint16_t f)
+void AStarNodes::createNewNode(const AStarNode_ptr& parent, uint16_t x, uint16_t y, uint16_t g, uint16_t f)
 {
-	toReleaseNodes.push_back(std::make_unique<AStarNode>());
-
-	auto newNode = toReleaseNodes.back().get();
+	AStarNode_ptr newNode = std::make_shared<AStarNode>();
 	newNode->parent = parent;
 	newNode->x = x;
 	newNode->y = y;
@@ -838,20 +834,20 @@ void AStarNodes::createNewNode(AStarNode* parent, uint16_t x, uint16_t y, uint16
 	nodeMap[x][y] = newNode;
 }
 
-AStarNode* AStarNodes::getBestNode()
+AStarNode_ptr AStarNodes::getBestNode()
 {
 	if (nodes.size() == 0) {
 		return nullptr;
 	}
 
 	std::nth_element(nodes.begin(), nodes.end() - 1, nodes.end(),
-	                 [](AStarNode* left, AStarNode* right) { return left->f > right->f; });
-	AStarNode* retNode = nodes.back();
+	                 [](const AStarNode_ptr& left, const AStarNode_ptr& right) { return left->f > right->f; });
+	const auto& retNode = nodes.back();
 	nodes.pop_back();
 	return retNode;
 }
 
-uint16_t AStarNodes::getMapWalkCost(AStarNode* node, const Position& neighborPos)
+uint16_t AStarNodes::getMapWalkCost(const AStarNode_ptr& node, const Position& neighborPos)
 {
 	if (std::abs(node->x - neighborPos.x) == std::abs(node->y - neighborPos.y)) {
 		// diagonal movement extra cost
